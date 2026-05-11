@@ -1,0 +1,32 @@
+{
+  "name": "Kingdom Come",
+  "short_name": "Kingdom Come",
+  "description": "A client-side grand-strategy simulation for iPad.",
+  "start_url": "/play",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape-primary",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

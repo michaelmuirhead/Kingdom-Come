@@ -12,7 +12,8 @@
     "test:run": "vitest run",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "validate-content": "tsx scripts/validateContent.ts"
+    "validate-content": "tsx scripts/validateContent.ts",
+    "generate-icons": "tsx scripts/generateIcons.ts"
   },
   "dependencies": {
     "next": "14.2.35",
@@ -36,6 +37,7 @@
     "postcss": "8.4.49",
     "prettier": "3.3.3",
     "prettier-plugin-tailwindcss": "0.6.8",
+    "sharp": "0.33.5",
     "tailwindcss": "3.4.14",
     "tsx": "4.19.2",
     "typescript": "5.6.3",

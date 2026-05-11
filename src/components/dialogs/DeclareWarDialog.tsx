@@ -53,7 +53,7 @@ export function DeclareWarDialog() {
         <p className="mt-2 text-sm text-neutral-300">
           {player.name} will declare war on {target.name} with a casus belli
           of <span className="font-mono text-amber-400">Conquest</span>. Both
-          nations' opinions will drop by 50.
+          nations&apos; opinions will drop by 50.
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <button
