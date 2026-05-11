@@ -6,4 +6,5 @@ export * from './character';
 export * from './army';
 export * from './war';
 export * from './treaty';
+export * from './event';
 export * from './ui';

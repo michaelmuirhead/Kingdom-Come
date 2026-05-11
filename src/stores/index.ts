@@ -15,3 +15,21 @@ export type { NationStoreState, NationStoreSnapshot } from './nationStore';
 
 export { useDynastyStore } from './dynastyStore';
 export type { DynastyStoreState, DynastyStoreSnapshot } from './dynastyStore';
+
+export { useMilitaryStore } from './militaryStore';
+export type {
+  MilitaryStoreState,
+  MilitaryStoreSnapshot,
+} from './militaryStore';
+
+export { useDiplomacyStore } from './diplomacyStore';
+export type {
+  DiplomacyStoreState,
+  DiplomacyStoreSnapshot,
+} from './diplomacyStore';
+
+export { useEventQueueStore } from './eventQueueStore';
+export type {
+  EventQueueStoreState,
+  EventQueueSnapshot,
+} from './eventQueueStore';
