@@ -25,6 +25,7 @@ import {
   useWorldStore,
 } from '@/stores';
 import { generateId } from '@/lib/id';
+import { emergencyAutosave } from '@/persistence/saveGame';
 import type { RNG } from '@/lib/rng';
 import {
   buildSide,
@@ -122,6 +123,13 @@ export function handleRulerDeath(
   };
   const existing = useWorldStore.getState().pauseReasons;
   useWorldStore.getState().pauseWithReasons([...existing, reason]);
+
+  // 6. Emergency autosave — the player's ruler dying is a moment they
+  //    might want to back up before reacting.
+  emergencyAutosave().catch((e) => {
+    // eslint-disable-next-line no-console
+    console.warn('emergency autosave failed:', e);
+  });
 
   return {
     rulerId: ruler.id,

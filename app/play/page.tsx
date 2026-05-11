@@ -15,6 +15,7 @@ import { TopBar } from '@/components/hud/TopBar';
 import { ArmySelector } from '@/components/hud/ArmySelector';
 import { ProvinceDrawer } from '@/components/drawers/ProvinceDrawer';
 import { NationDrawer } from '@/components/drawers/NationDrawer';
+import { SaveLoadDrawer } from '@/components/drawers/SaveLoadDrawer';
 import { DeclareWarDialog } from '@/components/dialogs/DeclareWarDialog';
 import { useTickLoop } from '@/hooks/useTickLoop';
 
@@ -42,6 +43,7 @@ export default function PlayPage() {
           <ArmySelector />
           <ProvinceDrawer />
           <NationDrawer />
+          <SaveLoadDrawer />
           <DeclareWarDialog />
         </>
       ) : null}

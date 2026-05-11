@@ -64,8 +64,17 @@ export function TopBar() {
         <SpeedControls />
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-3">
         <ResourceDisplay />
+        <button
+          type="button"
+          onClick={() => setDrawer('save_load')}
+          aria-label="Save or load game"
+          data-testid="save-load-button"
+          className="flex h-11 w-11 items-center justify-center rounded text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100"
+        >
+          💾
+        </button>
       </div>
     </header>
   );

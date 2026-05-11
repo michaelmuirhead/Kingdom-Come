@@ -15,6 +15,7 @@
  */
 
 import { useWorldStore } from '@/stores/worldStore';
+import { autosave } from '@/persistence/saveGame';
 import { economyTick as defaultEconomyTick } from './economy/tick';
 import { militaryTick as defaultMilitaryTick } from './military/tick';
 import { diplomacyTick as defaultDiplomacyTick } from './diplomacy/tick';
@@ -66,6 +67,17 @@ function checkPauseConditions(): void {
   // Issues #18 and #21. Stubbed for v0.1.
 }
 
+/** Yearly autosave hook — fires after each 12-month increment. */
+function maybeAutosave(): void {
+  const months = useWorldStore.getState().monthsPlayed;
+  if (months > 0 && months % 12 === 0) {
+    autosave().catch((e) => {
+      // eslint-disable-next-line no-console
+      console.warn('autosave failed:', e);
+    });
+  }
+}
+
 /** Run one monthly tick end-to-end. */
 export function runMonthlyTick(): void {
   for (const stage of TICK_ORDER) {
@@ -73,4 +85,5 @@ export function runMonthlyTick(): void {
   }
   useWorldStore.getState().advanceMonth();
   checkPauseConditions();
+  maybeAutosave();
 }
