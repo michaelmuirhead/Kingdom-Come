@@ -464,7 +464,7 @@ const SPECS: readonly Spec[] = [
     governmentType: 'merchant_republic',
     archetypeId: 'merchant_republic',
     flagColor: '#d04040',
-    rulerId: 'char_genoese_doge',
+    rulerId: 'char_lanfranco_pevere',
     dynastyId: 'dyn_genoese_doges',
     successionLaw: 'elective',
     treasury: 240,
