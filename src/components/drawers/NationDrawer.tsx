@@ -10,9 +10,11 @@
  */
 
 import { useDynastyStore } from '@/stores/dynastyStore';
+import { useMilitaryStore } from '@/stores/militaryStore';
 import { useNationStore } from '@/stores/nationStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useWorldStore } from '@/stores/worldStore';
+import { areNationsAtWar } from '@/engine/diplomacy/opinions';
 import type { IdeologyVector } from '@/types';
 import { DrawerContainer } from './DrawerContainer';
 import type { ReactNode } from 'react';
@@ -30,6 +32,7 @@ const AXIS_LABELS: Array<[keyof IdeologyVector, string, string]> = [
 export function NationDrawer() {
   const open = useUIStore((s) => s.openDrawer === 'nation');
   const closeDrawer = useUIStore((s) => s.closeDrawer);
+  const setDialog = useUIStore((s) => s.setDialog);
   const selectedNationId = useUIStore((s) => s.selectedNationId);
   const playerNationId = useWorldStore((s) => s.playerNationId);
   const nationId = selectedNationId ?? playerNationId;
@@ -40,8 +43,11 @@ export function NationDrawer() {
   const ruler = useDynastyStore((s) =>
     nation ? s.characters[nation.rulerId] : undefined,
   );
+  const wars = useMilitaryStore((s) => s.wars);
 
   if (!open || !nation) return null;
+  const isForeign = nation.id !== playerNationId;
+  const atWar = isForeign && areNationsAtWar(playerNationId, nation.id, wars);
 
   return (
     <DrawerContainer
@@ -51,6 +57,26 @@ export function NationDrawer() {
       subtitle={nation.tag}
       testid="nation-drawer"
     >
+      {atWar ? (
+        <div
+          data-testid="nation-drawer-at-war"
+          className="-mx-4 mb-3 border-y border-red-700 bg-red-900/40 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-red-200"
+        >
+          At war with you
+        </div>
+      ) : null}
+
+      {isForeign && !atWar ? (
+        <button
+          type="button"
+          data-testid="declare-war-button"
+          onClick={() => setDialog('declare_war')}
+          className="mb-3 flex h-11 w-full items-center justify-center rounded bg-red-600 text-sm font-semibold text-white hover:bg-red-500"
+        >
+          Declare War
+        </button>
+      ) : null}
+
       <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-2">
         <Pair label="Government">{nation.governmentType}</Pair>
         <Pair label="Archetype">{nation.archetypeId}</Pair>

@@ -14,6 +14,7 @@ import { WorldMap } from '@/components/map/WorldMap';
 import { TopBar } from '@/components/hud/TopBar';
 import { ProvinceDrawer } from '@/components/drawers/ProvinceDrawer';
 import { NationDrawer } from '@/components/drawers/NationDrawer';
+import { DeclareWarDialog } from '@/components/dialogs/DeclareWarDialog';
 import { useTickLoop } from '@/hooks/useTickLoop';
 
 export default function PlayPage() {
@@ -39,6 +40,7 @@ export default function PlayPage() {
         <>
           <ProvinceDrawer />
           <NationDrawer />
+          <DeclareWarDialog />
         </>
       ) : null}
     </main>

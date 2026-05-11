@@ -16,6 +16,7 @@
  */
 
 import {
+  useDiplomacyStore,
   useDynastyStore,
   useEventQueueStore,
   useMilitaryStore,
@@ -278,4 +279,76 @@ export function resolveBattle(
   });
 
   return { battleId, outcome, retreatTo: retreatTarget };
+}
+
+/**
+ * Declare war between two nations.
+ *
+ * Creates the War entity, applies a -50 opinion modifier in both
+ * directions, and queues a `war_declared` event. AI peace negotiation
+ * arrives post-v0.1 — wars stay open until the player ends them
+ * manually (the white-peace UI lives in Issue #25 polish).
+ */
+export interface DeclareWarOpts {
+  attackerNationId: NationId;
+  defenderNationId: NationId;
+  casusBelli: import('@/types').CasusBelliType;
+  now: GameDate;
+}
+
+export function declareWar(opts: DeclareWarOpts): string {
+  const { attackerNationId, defenderNationId, casusBelli, now } = opts;
+  const nations = useNationStore.getState().nations;
+  const attacker = nations[attackerNationId];
+  const defender = nations[defenderNationId];
+  if (!attacker || !defender) {
+    throw new Error(
+      `declareWar: unknown nation(s) ${attackerNationId}, ${defenderNationId}`,
+    );
+  }
+
+  const warId = generateId('war');
+  useMilitaryStore.getState().declareWar({
+    id: warId,
+    name: `${attacker.name}–${defender.name} War`,
+    startDate: now,
+    endDate: null,
+    attackers: [attackerNationId],
+    defenders: [defenderNationId],
+    warLeader: { attacker: attackerNationId, defender: defenderNationId },
+    warGoals: [],
+    casusBelli,
+    warScore: 0,
+    battlesIds: [],
+    siegesIds: [],
+    occupiedProvinces: [],
+  });
+
+  const modifier = {
+    source: 'Declared war',
+    value: -50,
+    appliedDate: now,
+    expiresDate: null,
+  };
+  useDiplomacyStore
+    .getState()
+    .addOpinionModifier(attackerNationId, defenderNationId, modifier);
+  useDiplomacyStore
+    .getState()
+    .addOpinionModifier(defenderNationId, attackerNationId, modifier);
+
+  useEventQueueStore.getState().queueEvent({
+    id: generateId('evt'),
+    eventDefinitionId: 'war_declared',
+    nationId: defenderNationId,
+    triggeredDate: now,
+    contextParams: {
+      warId,
+      attackerNationId,
+      defenderNationId,
+      casusBelli,
+    },
+  });
+
+  return warId;
 }

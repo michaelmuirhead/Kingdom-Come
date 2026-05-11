@@ -16,6 +16,8 @@ import { useUIStore } from '@/stores/uiStore';
 export function ProvinceDrawer() {
   const open = useUIStore((s) => s.openDrawer === 'province');
   const closeDrawer = useUIStore((s) => s.closeDrawer);
+  const setDrawer = useUIStore((s) => s.setDrawer);
+  const setSelectedNation = useUIStore((s) => s.setSelectedNation);
   const provinceId = useUIStore((s) => s.selectedProvinceId);
   const province = useProvinceStore((s) =>
     provinceId ? s.provinces[provinceId] : undefined,
@@ -33,6 +35,11 @@ export function ProvinceDrawer() {
   const ownerName = owner?.name ?? province.controllerId;
   const occupierName = occupier?.name;
 
+  const handleOpenOwner = () => {
+    setSelectedNation(province.controllerId);
+    setDrawer('nation');
+  };
+
   return (
     <DrawerWrapper
       open={open}
@@ -44,6 +51,15 @@ export function ProvinceDrawer() {
           : ownerName
       }
     >
+      <button
+        type="button"
+        data-testid="view-owner-button"
+        onClick={handleOpenOwner}
+        className="mb-3 flex h-11 w-full items-center justify-center rounded border border-neutral-700 bg-neutral-900 text-sm font-semibold text-neutral-100 hover:bg-neutral-800"
+      >
+        View {ownerName}
+      </button>
+
       <dl className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-2">
         <Pair label="Region">{province.regionId}</Pair>
         <Pair label="Terrain">{province.terrain}</Pair>
