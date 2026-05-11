@@ -10,6 +10,7 @@
  */
 
 import { memo } from 'react';
+import { setArmyMovement } from '@/engine/orchestrator';
 import { useProvinceColor } from '@/hooks/useProvinceColor';
 import { useProvinceStore } from '@/stores/provinceStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -26,11 +27,18 @@ function ProvinceComponentImpl({ provinceId }: ProvinceProps) {
     (s) => s.selectedProvinceId === provinceId,
   );
   const setSelectedProvince = useUIStore((s) => s.setSelectedProvince);
+  const setSelectedArmy = useUIStore((s) => s.setSelectedArmy);
   const setDrawer = useUIStore((s) => s.setDrawer);
 
   if (!pathData) return null;
 
   const handleSelect = () => {
+    const { selectedArmyId } = useUIStore.getState();
+    if (selectedArmyId) {
+      setArmyMovement(selectedArmyId, provinceId);
+      setSelectedArmy(null);
+      return;
+    }
     setSelectedProvince(provinceId);
     setDrawer('province');
   };

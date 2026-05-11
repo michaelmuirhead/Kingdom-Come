@@ -352,3 +352,94 @@ export function declareWar(opts: DeclareWarOpts): string {
 
   return warId;
 }
+
+/**
+ * Raise a new army for `nationId`. Costs 100 gold + 5 manpower per
+ * regiment. Throws if the nation doesn't have enough of either. The
+ * army spawns in the nation's capital (or the first owned province if
+ * no capital flag is set anywhere — defensive fallback).
+ */
+export const ARMY_GOLD_PER_REGIMENT = 100;
+export const ARMY_MANPOWER_PER_REGIMENT = 5;
+
+export interface RaiseArmyOpts {
+  nationId: NationId;
+  regimentCount: number;
+}
+
+export function raiseArmy(opts: RaiseArmyOpts): string {
+  const { nationId, regimentCount } = opts;
+  if (regimentCount <= 0) {
+    throw new Error('raiseArmy: regimentCount must be > 0');
+  }
+  const nation = useNationStore.getState().nations[nationId];
+  if (!nation) throw new Error(`raiseArmy: unknown nation ${nationId}`);
+
+  const goldCost = ARMY_GOLD_PER_REGIMENT * regimentCount;
+  const manpowerCost = ARMY_MANPOWER_PER_REGIMENT * regimentCount;
+  if (nation.treasury < goldCost) {
+    throw new Error(
+      `raiseArmy: ${nationId} treasury ${nation.treasury} < cost ${goldCost}`,
+    );
+  }
+  if (nation.manpower < manpowerCost) {
+    throw new Error(
+      `raiseArmy: ${nationId} manpower ${nation.manpower} < cost ${manpowerCost}`,
+    );
+  }
+
+  // Locate spawn province: capital first, else first owned province.
+  const provinces = useProvinceStore.getState().provinces;
+  let spawn: ProvinceId | null = null;
+  for (const p of Object.values(provinces)) {
+    if (p.controllerId !== nationId) continue;
+    if (p.isCapital) {
+      spawn = p.id;
+      break;
+    }
+    if (spawn === null) spawn = p.id;
+  }
+  if (!spawn) {
+    throw new Error(`raiseArmy: ${nationId} owns no provinces to spawn in`);
+  }
+
+  // Build regiments — equal-strength levies for v0.1.
+  const regiments = Array.from({ length: regimentCount }, (_, i) => ({
+    id: `${nationId}_reg_${Date.now().toString(36)}_${i}`,
+    unitType: 'levy',
+    size: 1000,
+    experience: 0,
+  }));
+
+  const armyId = generateId('army');
+  useMilitaryStore.getState().createArmy({
+    id: armyId,
+    nationId,
+    name: `${nation.name} Levy ${armyId.slice(-4)}`,
+    regiments,
+    provinceId: spawn,
+    movementTarget: null,
+    movementProgress: 0,
+    generalId: null,
+    morale: 100,
+    organization: 100,
+    attritionMonth: 0,
+    inBattle: null,
+    inSiege: null,
+    isEmbarked: false,
+    embarkedOnFleetId: null,
+  });
+
+  useNationStore.getState().updateTreasury(nationId, -goldCost);
+  useNationStore.getState().updateManpower(nationId, -manpowerCost);
+
+  return armyId;
+}
+
+/**
+ * Set an army's movementTarget. Thin orchestrator so UI dispatching
+ * stays on the same pattern as everything else.
+ */
+export function setArmyMovement(armyId: string, target: ProvinceId | null): void {
+  useMilitaryStore.getState().moveArmy(armyId, target);
+}

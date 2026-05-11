@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { startNewCampaign } from '@/persistence/loadCampaign';
 import { WorldMap } from '@/components/map/WorldMap';
 import { TopBar } from '@/components/hud/TopBar';
+import { ArmySelector } from '@/components/hud/ArmySelector';
 import { ProvinceDrawer } from '@/components/drawers/ProvinceDrawer';
 import { NationDrawer } from '@/components/drawers/NationDrawer';
 import { DeclareWarDialog } from '@/components/dialogs/DeclareWarDialog';
@@ -38,6 +39,7 @@ export default function PlayPage() {
       </section>
       {ready ? (
         <>
+          <ArmySelector />
           <ProvinceDrawer />
           <NationDrawer />
           <DeclareWarDialog />

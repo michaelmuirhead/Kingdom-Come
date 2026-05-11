@@ -15,9 +15,16 @@ import { useNationStore } from '@/stores/nationStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useWorldStore } from '@/stores/worldStore';
 import { areNationsAtWar } from '@/engine/diplomacy/opinions';
-import type { IdeologyVector } from '@/types';
+import {
+  ARMY_GOLD_PER_REGIMENT,
+  ARMY_MANPOWER_PER_REGIMENT,
+  raiseArmy,
+} from '@/engine/orchestrator';
+import type { Army, IdeologyVector } from '@/types';
 import { DrawerContainer } from './DrawerContainer';
 import type { ReactNode } from 'react';
+
+const DEFAULT_REGIMENTS = 2;
 
 const AXIS_LABELS: Array<[keyof IdeologyVector, string, string]> = [
   ['militaristPacifist', 'Pacifist', 'Militarist'],
@@ -44,10 +51,25 @@ export function NationDrawer() {
     nation ? s.characters[nation.rulerId] : undefined,
   );
   const wars = useMilitaryStore((s) => s.wars);
+  const armies = useMilitaryStore((s) =>
+    nation
+      ? (s.armiesByNation[nation.id] ?? []).map((id) => s.armies[id]!)
+      : ([] as Army[]),
+  );
 
   if (!open || !nation) return null;
   const isForeign = nation.id !== playerNationId;
   const atWar = isForeign && areNationsAtWar(playerNationId, nation.id, wars);
+
+  const armyGoldCost = ARMY_GOLD_PER_REGIMENT * DEFAULT_REGIMENTS;
+  const armyManpowerCost = ARMY_MANPOWER_PER_REGIMENT * DEFAULT_REGIMENTS;
+  const canAfford =
+    nation.treasury >= armyGoldCost && nation.manpower >= armyManpowerCost;
+
+  const handleRaiseArmy = () => {
+    if (!canAfford) return;
+    raiseArmy({ nationId: nation.id, regimentCount: DEFAULT_REGIMENTS });
+  };
 
   return (
     <DrawerContainer
@@ -150,6 +172,45 @@ export function NationDrawer() {
               </li>
             ))}
           </ul>
+        </Section>
+      ) : null}
+
+      {!isForeign ? (
+        <Section title="Armies">
+          {armies.length === 0 ? (
+            <p className="mb-2 text-neutral-500">No armies in the field.</p>
+          ) : (
+            <ul className="mb-2 space-y-1 text-xs">
+              {armies.map((a) => {
+                if (!a) return null;
+                const totalSize = a.regiments.reduce(
+                  (s, r) => s + r.size,
+                  0,
+                );
+                return (
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between rounded border border-neutral-800 px-2 py-1"
+                  >
+                    <span className="text-neutral-100">{a.name}</span>
+                    <span className="font-mono text-neutral-400">
+                      {totalSize.toLocaleString()} @ {a.provinceId}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <button
+            type="button"
+            data-testid="raise-army-button"
+            disabled={!canAfford}
+            onClick={handleRaiseArmy}
+            className="flex h-11 w-full items-center justify-center rounded bg-amber-500 text-sm font-semibold text-neutral-900 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Raise army ({DEFAULT_REGIMENTS} regiments · {armyGoldCost}g ·{' '}
+            {armyManpowerCost} manpower)
+          </button>
         </Section>
       ) : null}
     </DrawerContainer>
