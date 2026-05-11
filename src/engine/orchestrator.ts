@@ -10,21 +10,35 @@
  * v0.1 surface:
  *   handleRulerDeath(ruler, nation, now) — death + succession + event
  *                                          queueing + pause
+ *   resolveBattle(provinceId, attackerNation, defenderNation, rng, now)
+ *                                          — combat + casualties +
+ *                                            occupation + retreat
  */
 
 import {
   useDynastyStore,
   useEventQueueStore,
+  useMilitaryStore,
   useNationStore,
+  useProvinceStore,
   useWorldStore,
 } from '@/stores';
 import { generateId } from '@/lib/id';
+import type { RNG } from '@/lib/rng';
+import {
+  buildSide,
+  resolveCombat,
+  type CombatOutcome,
+} from './military/combat';
 import type {
+  Army,
   Character,
   CharacterId,
   GameDate,
   Nation,
+  NationId,
   PauseReason,
+  ProvinceId,
   QueuedEvent,
 } from '@/types';
 import {
@@ -113,4 +127,155 @@ export function handleRulerDeath(
     nationId: nation.id,
     successor: succession,
   };
+}
+
+/**
+ * Resolve a battle in `provinceId` between `attackerNationId` and
+ * `defenderNationId`. v0.1: instantaneous resolution — no multi-month
+ * combat, no morale or organization tracking.
+ *
+ * Steps:
+ *   1. Snapshot armies on each side currently in the province.
+ *   2. Roll effectiveness for each side from `rng`.
+ *   3. Apply casualties to every regiment (15% winner / 30% loser).
+ *   4. Subtract total losses from each nation's manpower.
+ *   5. Retreat the loser to a friendly adjacent province; if none,
+ *      destroy the army(ies).
+ *   6. Set province.occupierId to the winner if it wasn't already the
+ *      controller.
+ *   7. Record an unresolved → resolved Battle entity for the ledger.
+ *
+ * Returns the CombatOutcome and the chosen battle id.
+ */
+export interface BattleResolution {
+  battleId: string;
+  outcome: CombatOutcome;
+  retreatTo: ProvinceId | null;
+}
+
+export function resolveBattle(
+  provinceId: ProvinceId,
+  attackerNationId: NationId,
+  defenderNationId: NationId,
+  rng: RNG,
+  now: GameDate,
+): BattleResolution | null {
+  const armies = Object.values(useMilitaryStore.getState().armies);
+  const attackerArmies = armies.filter(
+    (a) => a.nationId === attackerNationId && a.provinceId === provinceId,
+  );
+  const defenderArmies = armies.filter(
+    (a) => a.nationId === defenderNationId && a.provinceId === provinceId,
+  );
+  if (attackerArmies.length === 0 || defenderArmies.length === 0) return null;
+
+  // 1) Strength + RNG roll.
+  const atk = buildSide(attackerNationId, attackerArmies, rng);
+  const def = buildSide(defenderNationId, defenderArmies, rng);
+  const outcome = resolveCombat(atk, def);
+
+  // 2) Battle entity for the ledger.
+  const battleId = generateId('btl');
+  useMilitaryStore.getState().startBattle({
+    id: battleId,
+    provinceId,
+    attackerArmyIds: attackerArmies.map((a) => a.id),
+    defenderArmyIds: defenderArmies.map((a) => a.id),
+    combatWidth: 20,
+    startDate: now,
+    resolved: false,
+  });
+
+  // 3) Apply casualty results to each army (or destroy zero-strength
+  //    armies). Retreat the loser side off the battlefield.
+  const losingNationId = outcome.loserNationId;
+  const winningNationId = outcome.winnerNationId;
+  const province = useProvinceStore.getState().provinces[provinceId];
+  const adjacencies = province?.adjacencies ?? [];
+
+  // Find a friendly retreat option for the loser.
+  let retreatTarget: ProvinceId | null = null;
+  for (const adj of adjacencies) {
+    const adjProv = useProvinceStore.getState().provinces[adj];
+    if (!adjProv) continue;
+    if (
+      adjProv.controllerId === losingNationId &&
+      adjProv.occupierId === null
+    ) {
+      retreatTarget = adj;
+      break;
+    }
+  }
+
+  for (const [armyId, regiments] of Object.entries(outcome.updatedRegiments)) {
+    const totalRemaining = regiments.reduce((s, r) => s + r.size, 0);
+    if (totalRemaining <= 0) {
+      useMilitaryStore.getState().disbandArmy(armyId);
+      continue;
+    }
+    const army = useMilitaryStore.getState().armies[armyId];
+    if (!army) continue;
+    const updates: Partial<Army> = { regiments };
+    if (army.nationId === losingNationId) {
+      if (retreatTarget) {
+        // Set new location directly — combat is "instantaneous" so we
+        // don't model retreat as ongoing movement in v0.1.
+        useMilitaryStore.getState().setArmyLocation(armyId, retreatTarget);
+      } else {
+        useMilitaryStore.getState().disbandArmy(armyId);
+        continue;
+      }
+    }
+    useMilitaryStore.getState().updateArmy(armyId, updates);
+  }
+
+  // 4) Manpower casualties.
+  useNationStore
+    .getState()
+    .updateManpower(winningNationId, -outcome.totalWinnerCasualties);
+  useNationStore
+    .getState()
+    .updateManpower(losingNationId, -outcome.totalLoserCasualties);
+
+  // 5) Occupation. If the winner is not the controller, mark the
+  //    province occupied.
+  if (province && province.controllerId !== winningNationId) {
+    useProvinceStore.getState().updateOccupation(provinceId, winningNationId);
+  } else if (province && province.controllerId === winningNationId) {
+    // Defender held; clear any prior occupation flag.
+    useProvinceStore.getState().updateOccupation(provinceId, null);
+  }
+
+  // 6) Mark battle resolved.
+  useMilitaryStore.getState().resolveBattle(battleId, {
+    winnerId: winningNationId,
+    attackerCasualties:
+      winningNationId === attackerNationId
+        ? outcome.totalWinnerCasualties
+        : outcome.totalLoserCasualties,
+    defenderCasualties:
+      winningNationId === defenderNationId
+        ? outcome.totalWinnerCasualties
+        : outcome.totalLoserCasualties,
+    generalsKilled: [],
+    generalsWounded: [],
+  });
+
+  // 7) Queue a battle-result event for the ledger / drawer.
+  useEventQueueStore.getState().queueEvent({
+    id: generateId('evt'),
+    eventDefinitionId: 'battle_resolved',
+    nationId: winningNationId,
+    triggeredDate: now,
+    contextParams: {
+      battleId,
+      provinceId,
+      winnerNationId: winningNationId,
+      loserNationId: losingNationId,
+      winnerCasualties: outcome.totalWinnerCasualties,
+      loserCasualties: outcome.totalLoserCasualties,
+    },
+  });
+
+  return { battleId, outcome, retreatTo: retreatTarget };
 }
