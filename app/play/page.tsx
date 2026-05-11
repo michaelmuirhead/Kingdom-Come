@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { startNewCampaign } from '@/persistence/loadCampaign';
 import { WorldMap } from '@/components/map/WorldMap';
 import { TopBar } from '@/components/hud/TopBar';
+import { useTickLoop } from '@/hooks/useTickLoop';
 
 export default function PlayPage() {
   const [ready, setReady] = useState(false);
@@ -23,6 +24,8 @@ export default function PlayPage() {
     });
     setReady(true);
   }, []);
+
+  useTickLoop();
 
   return (
     <main className="flex h-screen w-screen flex-col bg-neutral-950 text-neutral-100">
