@@ -121,6 +121,20 @@ export function centerOfPath(pathD: string): Position {
 }
 
 /**
+ * Euclidean distance between two screen points. Used by the pinch-zoom
+ * gesture handler to detect zoom factor between two touches.
+ */
+export function touchDistance(a: Position, b: Position): number {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+export function midpoint(a: Position, b: Position): Position {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+/**
  * Ray-cast point-in-polygon. Treats the parsed vertices as a closed
  * polygon (Z is implied even if the path didn't include it).
  */

@@ -36,11 +36,9 @@ function ProvinceComponentImpl({ provinceId }: ProvinceProps) {
       stroke={isSelected ? '#ffffff' : '#222222'}
       strokeWidth={isSelected ? 3 : 0.5}
       data-province-id={provinceId}
+      // Mouse only: touch taps are routed by useMapGestures so we can
+      // distinguish tap from drag at the SVG level.
       onClick={() => setSelectedProvince(provinceId)}
-      onTouchEnd={(e) => {
-        e.preventDefault();
-        setSelectedProvince(provinceId);
-      }}
       style={{ cursor: 'pointer', touchAction: 'none' }}
     />
   );
