@@ -26,8 +26,14 @@ function ProvinceComponentImpl({ provinceId }: ProvinceProps) {
     (s) => s.selectedProvinceId === provinceId,
   );
   const setSelectedProvince = useUIStore((s) => s.setSelectedProvince);
+  const setDrawer = useUIStore((s) => s.setDrawer);
 
   if (!pathData) return null;
+
+  const handleSelect = () => {
+    setSelectedProvince(provinceId);
+    setDrawer('province');
+  };
 
   return (
     <path
@@ -38,7 +44,7 @@ function ProvinceComponentImpl({ provinceId }: ProvinceProps) {
       data-province-id={provinceId}
       // Mouse only: touch taps are routed by useMapGestures so we can
       // distinguish tap from drag at the SVG level.
-      onClick={() => setSelectedProvince(provinceId)}
+      onClick={handleSelect}
       style={{ cursor: 'pointer', touchAction: 'none' }}
     />
   );

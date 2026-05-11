@@ -27,6 +27,7 @@ export function TopBar() {
     (s) => s.nations[playerNationId]?.flagColor ?? '#404040',
   );
   const setDrawer = useUIStore((s) => s.setDrawer);
+  const setSelectedNation = useUIStore((s) => s.setSelectedNation);
 
   return (
     <header
@@ -36,7 +37,10 @@ export function TopBar() {
       <button
         type="button"
         className="flex h-11 items-center gap-2 rounded px-2 transition-colors hover:bg-neutral-800"
-        onClick={() => setDrawer('nation')}
+        onClick={() => {
+          setSelectedNation(playerNationId);
+          setDrawer('nation');
+        }}
         aria-label={`Open ${nationName} nation panel`}
         data-testid="nation-banner"
       >

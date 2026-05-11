@@ -23,6 +23,7 @@ export function WorldMap() {
   const cameraZoom = useUIStore((s) => s.cameraZoom);
   const setCamera = useUIStore((s) => s.setCamera);
   const setSelectedProvince = useUIStore((s) => s.setSelectedProvince);
+  const setDrawer = useUIStore((s) => s.setDrawer);
 
   const camera: Camera = { center: cameraCenter, zoom: cameraZoom };
   const viewBox = viewBoxString(viewBoxFor(camera));
@@ -37,7 +38,10 @@ export function WorldMap() {
   useMapGestures(svgRef, {
     cameraRef,
     setCamera: (c) => setCamera(c.center, c.zoom),
-    selectProvince: (id) => setSelectedProvince(id),
+    selectProvince: (id) => {
+      setSelectedProvince(id);
+      if (id) setDrawer('province');
+    },
   });
 
   return (

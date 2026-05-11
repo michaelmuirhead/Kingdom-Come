@@ -12,6 +12,8 @@ import { useEffect, useState } from 'react';
 import { startNewCampaign } from '@/persistence/loadCampaign';
 import { WorldMap } from '@/components/map/WorldMap';
 import { TopBar } from '@/components/hud/TopBar';
+import { ProvinceDrawer } from '@/components/drawers/ProvinceDrawer';
+import { NationDrawer } from '@/components/drawers/NationDrawer';
 import { useTickLoop } from '@/hooks/useTickLoop';
 
 export default function PlayPage() {
@@ -33,6 +35,12 @@ export default function PlayPage() {
       <section className="flex-1 overflow-hidden">
         {ready ? <WorldMap /> : <LoadingState />}
       </section>
+      {ready ? (
+        <>
+          <ProvinceDrawer />
+          <NationDrawer />
+        </>
+      ) : null}
     </main>
   );
 }
